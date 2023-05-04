@@ -78,9 +78,9 @@ class conditional_independence():
             for y in [0, 1]:
                 for c in [0, 1]:
                     if not np.isclose(X_Y_C[(x, y, c)], X_C[x, c] * Y_C[y, c]):  # if P(X∩Y) ≠ P(X)*P(B)
-                     return True  # Dependent
+                     return True  # independent
 
-            # if P(X∩Y) = P(X)*P(B) for every value in X, Y - They are independent
+            # dependent
         return False
         ###########################################################################
         #                             END OF YOUR CODE                            #
@@ -97,7 +97,8 @@ def poisson_log_pmf(k, rate):
     ###########################################################################
     # TODO: Implement the function.                                           #
     ###########################################################################
-    pass
+    log_p = (rate**k) * np.e**(np.negative(rate))
+    log_p /= np.math.factorial(k)
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
