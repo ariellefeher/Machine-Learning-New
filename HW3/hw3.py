@@ -99,11 +99,12 @@ def poisson_log_pmf(k, rate):
     ###########################################################################
     log_p = (rate**k) * (np.e**(np.negative(rate)))
     log_p /= np.math.factorial(k)
-    log_p = np.log2(log_p)
+    log_p = np.log(log_p)
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
     return log_p
+
 
 def get_poisson_log_likelihoods(samples, rates):
     """
@@ -116,7 +117,7 @@ def get_poisson_log_likelihoods(samples, rates):
     ###########################################################################
     # TODO: Implement the function.                                           #
     ###########################################################################
-    pass
+    likelihoods = [np.sum([poisson_log_pmf(s, r) for s in samples]) for r in rates]
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
