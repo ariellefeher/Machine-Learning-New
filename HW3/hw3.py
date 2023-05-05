@@ -156,7 +156,7 @@ def possion_analytic_mle(samples):
 
 def normal_pdf(x, mean, std):
     """
-    Calculate normal desnity function for a given x, mean and standrad deviation.
+    Calculate normal density function for a given x, mean and standrad deviation.
  
     Input:
     - x: A value we want to compute the distribution for.
@@ -176,6 +176,7 @@ def normal_pdf(x, mean, std):
     ###########################################################################
     return p
 
+
 class NaiveNormalClassDistribution():
     def __init__(self, dataset, class_value):
         """
@@ -187,22 +188,27 @@ class NaiveNormalClassDistribution():
         - class_value : The class to calculate the parameters for.
         """
         ###########################################################################
-        # TODO: Implement the function.                                           #
         ###########################################################################
-        pass
+        self.dataset = dataset
+        self.class_value = class_value
+
+        self.class_label = class_value[:-1]
+        self.class_data = dataset[self.class_label == class_value, :-1]
+
+        self.mean = np.mean(self.class_label, axis=0)
+        self.std = np.std(self.class_label, axis=0)
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
     
     def get_prior(self):
         """
-        Returns the prior porbability of the class according to the dataset distribution.
+        Returns the prior probability of the class according to the dataset distribution.
         """
         prior = None
         ###########################################################################
-        # TODO: Implement the function.                                           #
         ###########################################################################
-        pass
+        prior = len(self.class_data) / len(self.dataset)
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
@@ -210,13 +216,15 @@ class NaiveNormalClassDistribution():
     
     def get_instance_likelihood(self, x):
         """
-        Returns the likelihhod porbability of the instance under the class according to the dataset distribution.
+        Returns the likelihood probability of the instance under the class according to the dataset distribution.
         """
         likelihood = None
         ###########################################################################
         # TODO: Implement the function.                                           #
         ###########################################################################
-        pass
+
+        normal_val = normal_pdf(x, self.mean, self.std)
+
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
@@ -224,7 +232,7 @@ class NaiveNormalClassDistribution():
     
     def get_instance_posterior(self, x):
         """
-        Returns the posterior porbability of the instance under the class according to the dataset distribution.
+        Returns the posterior probability of the instance under the class according to the dataset distribution.
         * Ignoring p(x)
         """
         posterior = None
