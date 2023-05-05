@@ -79,7 +79,7 @@ class conditional_independence():
             for y in [0, 1]:
                 for c in [0, 1]:
                     if not np.isclose(X_Y_C[(x, y, c)], X_C[x, c] * Y_C[y, c]):  # if P(X∩Y) ≠ P(X)*P(B)
-                     return True  # independent
+                        return True  # independent
 
             # dependent
         return False
@@ -115,7 +115,6 @@ def get_poisson_log_likelihoods(samples, rates):
     """
     likelihoods = None
     ###########################################################################
-    # TODO: Implement the function.                                           #
     ###########################################################################
     likelihoods = [np.sum([poisson_log_pmf(s, r) for s in samples]) for r in rates]
     ###########################################################################
@@ -133,9 +132,8 @@ def possion_iterative_mle(samples, rates):
     rate = 0.0
     likelihoods = get_poisson_log_likelihoods(samples, rates) # might help
     ###########################################################################
-    # TODO: Implement the function.                                           #
     ###########################################################################
-    pass
+    rate = rates[np.argmax(likelihoods)]  # position of the maximum likelihood
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -151,7 +149,7 @@ def possion_analytic_mle(samples):
     ###########################################################################
     # TODO: Implement the function.                                           #
     ###########################################################################
-    pass
+    mean = np.average(samples)
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
