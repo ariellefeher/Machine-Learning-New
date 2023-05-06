@@ -238,7 +238,7 @@ class NaiveNormalClassDistribution():
         posterior = None
         ###########################################################################
         ###########################################################################
-        posterior = self.getprior(self) * self.get_instance_likelihood(x)
+        posterior = self.get_prior() * self.get_instance_likelihood(x)
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
@@ -262,7 +262,9 @@ class MAPClassifier():
         ###########################################################################
         # TODO: Implement the function.                                           #
         ###########################################################################
-        pass
+        self.ccd0 = ccd0
+        self.ccd1 = ccd1
+
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
@@ -278,9 +280,11 @@ class MAPClassifier():
         """
         pred = None
         ###########################################################################
-        # TODO: Implement the function.                                           #
         ###########################################################################
-        pass
+        if self.ccd0.get_instance_posterior(x) < self.ccd1.get_instance_posterior(x):
+            pred = 1
+        else:
+            pred = 0
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
@@ -299,13 +303,22 @@ def compute_accuracy(test_set, map_classifier):
     """
     acc = None
     ###########################################################################
-    # TODO: Implement the function.                                           #
     ###########################################################################
-    pass
+
+    features = test_set[:, :-1]
+    true_labels = test_set[:, -1]
+
+    # Predict classes using the MAP classifier
+    predicted_labels = np.array([map_classifier.predict(instance) for instance in features])
+
+    # Calculate the accuracy
+    acc = np.mean(predicted_labels == true_labels)
+
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
     return acc
+
 
 def multi_normal_pdf(x, mean, cov):
     """
