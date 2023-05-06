@@ -192,7 +192,7 @@ class NaiveNormalClassDistribution():
         self.dataset = dataset
         self.class_value = class_value
 
-        self.class_label = class_value[:-1]
+        self.class_label = dataset[:, -1]
         self.class_data = dataset[self.class_label == class_value, :-1]
 
         self.mean = np.mean(self.class_label, axis=0)
@@ -220,10 +220,10 @@ class NaiveNormalClassDistribution():
         """
         likelihood = None
         ###########################################################################
-        # TODO: Implement the function.                                           #
         ###########################################################################
 
         normal_val = normal_pdf(x, self.mean, self.std)
+        likelihood = np.prod(normal_val)
 
         ###########################################################################
         #                             END OF YOUR CODE                            #
@@ -237,9 +237,8 @@ class NaiveNormalClassDistribution():
         """
         posterior = None
         ###########################################################################
-        # TODO: Implement the function.                                           #
         ###########################################################################
-        pass
+        posterior = self.getprior(self) * self.get_instance_likelihood(x)
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
