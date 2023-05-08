@@ -87,6 +87,7 @@ class conditional_independence():
         #                             END OF YOUR CODE                            #
         ###########################################################################
 
+
 def poisson_log_pmf(k, rate):
     """
     k: A discrete instance
@@ -133,11 +134,14 @@ def possion_iterative_mle(samples, rates):
     likelihoods = get_poisson_log_likelihoods(samples, rates) # might help
     ###########################################################################
     ###########################################################################
+
     rate = rates[np.argmax(likelihoods)]  # position of the maximum likelihood
+
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
     return rate
+
 
 def possion_analytic_mle(samples):
     """
@@ -153,6 +157,7 @@ def possion_analytic_mle(samples):
     #                             END OF YOUR CODE                            #
     ###########################################################################
     return mean
+
 
 def normal_pdf(x, mean, std):
     """
@@ -170,6 +175,7 @@ def normal_pdf(x, mean, std):
     ###########################################################################
     p = 1 / np.sqrt(2 * np.pi * (std ** 2))
     calc_exponent = np.negative(((x - mean) ** 2) / (2 * (std ** 2)))
+
     p *= np.e ** calc_exponent
     ###########################################################################
     #                             END OF YOUR CODE                            #
@@ -244,6 +250,7 @@ class NaiveNormalClassDistribution():
         ###########################################################################
         return posterior
 
+
 class MAPClassifier():
     def __init__(self, ccd0 , ccd1):
         """
@@ -308,10 +315,9 @@ def compute_accuracy(test_set, map_classifier):
     # Predict classes using the MAP classifier
     predicted_labels = np.array([map_classifier.predict(instance) for instance in test_set])
 
-    true_labels = test_set[:, -1]
     # Calculate the accuracy
+    true_labels = test_set[:, -1]
     acc = np.mean(predicted_labels == true_labels)
-
 
     ###########################################################################
     #                             END OF YOUR CODE                            #
@@ -332,7 +338,6 @@ def multi_normal_pdf(x, mean, cov):
     """
     pdf = None
     ###########################################################################
-    # TODO: CHANGE CODE                                        #
     ###########################################################################
     x = np.delete(x, -1)
 
@@ -391,7 +396,7 @@ class MultiNormalClassDistribution():
         ###########################################################################
         ###########################################################################
         for i in range(len(x) - 1):
-            likelihood *= multi_normal_pdf(x, self.mean,self.cov)
+            likelihood *= multi_normal_pdf(x, self.mean, self.cov)
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
@@ -527,9 +532,7 @@ class DiscreteNBClassDistribution():
         prior = None
         ###########################################################################
         ###########################################################################
-        #nij
-        # ni
-        # |Vj|
+
         prior = len(self.class_data) / len(self.dataset)
         ###########################################################################
         #                             END OF YOUR CODE                            #
@@ -546,6 +549,7 @@ class DiscreteNBClassDistribution():
         ###########################################################################
         for j, attribute in enumerate(x):
             n_i_j = np.sum(self.class_data[:, j] == attribute)  # count instances where attribute matches the given
+
             if n_i_j == 0:  # if the attribute doesn't exist in the training data
                 likelihood *= EPSILLON
                 continue
