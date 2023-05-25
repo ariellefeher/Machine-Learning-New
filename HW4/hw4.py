@@ -30,6 +30,44 @@ class LogisticRegressionGD(object):
         self.Js = []
         self.thetas = []
 
+    """
+     Helper function to fit that calculates the hypothesis using the sigmoid
+    """
+    def compute_hypothesis(self, X):
+        hypothesis = 1 + np.math.e ** (-np.dot(X, self.theta.T))
+        hypothesis = 1 / hypothesis
+
+        return hypothesis
+
+    """
+     Helper function to fit that calculates the cost function
+    """
+    def compute_cost(self, X, y, hypothesis):
+
+        J = (1 / len(X)) * np.sum((-y * np.log(hypothesis)) - ((1 - y) * (np.log(1 - hypothesis))) )
+        return J
+
+    """
+     Helper function to fit that calculates the gradient descent efficiently
+     Based on my implementation from HW1
+    """
+    def gradient_descent(self, X, y):
+        m = X.shape[0]  # number of instances
+
+        for i in range(self.n_iter):
+
+            hypothesis = self.compute_hypothesis(X)
+
+            cost_value = self.compute_cost(X, y, hypothesis)
+            self.Js.append(cost_value)
+
+            if i > 0 and (self.Js[i - 1] - self.Js[i]) < self.eps:
+                break
+
+            self.theta = self.theta - (self.eta / m) * np.dot(X.T, hypothesis)
+            self.thetas.append(self.theta)
+
+
     def fit(self, X, y):
         """
         Fit training data (the learning phase).
@@ -53,9 +91,13 @@ class LogisticRegressionGD(object):
         np.random.seed(self.random_state)
 
         ###########################################################################
-        # TODO: Implement the function.                                           #
         ###########################################################################
-        pass
+        self.theta = np.random.random(size=3)  # initialize theta
+
+        # apply bias trick (implementation from HW1)
+        X = np.column_stack((np.ones(X.shape[0]), X))
+
+        self.gradient_descent(X, y)
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
@@ -67,11 +109,16 @@ class LogisticRegressionGD(object):
         ----------
         X : {array-like}, shape = [n_examples, n_features]
         """
-        preds = None
+        preds = []
         ###########################################################################
-        # TODO: Implement the function.                                           #
         ###########################################################################
-        pass
+
+        # apply bias trick (implementation from HW1)
+        X = np.column_stack((np.ones(X.shape[0]), X))
+
+        for i in range(X.shape[0]):
+             preds.append(1) if self.compute_hypothesis(X[i]) > 0.5 else preds.append(0)
+
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
