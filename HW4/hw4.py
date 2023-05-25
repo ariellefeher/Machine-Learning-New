@@ -154,9 +154,37 @@ def cross_validation(X, y, folds, algo, random_state):
     np.random.seed(random_state)
 
     ###########################################################################
-    # TODO: Implement the function.                                           #
     ###########################################################################
-    pass
+
+    # for storing the accuracy calculated per fold
+    accuracies = []
+
+    # Step 1: splitting the data into folds
+    indices = np.random.permutation(X.shape[0])  # shuffle the indices of data
+    fold_indices = np.array_split(indices, folds)
+
+    # Step 2: Training and Testing the data for each division of the folds
+    for i in range(folds):
+        # Step 2.1: dividing the data into training and testing based on the folds
+
+        train_idx = np.concatenate(fold_indices[:i] + fold_indices[i+1:])
+        test_idx = fold_indices[i]
+
+        # create training and test sets
+        X_train, y_train = X[train_idx], y[train_idx]
+        X_test, y_test = X[test_idx], y[test_idx]
+
+        # Step 2.2: Training the training data and predicting accordingly
+
+        algo.fit(X_train, y_train)
+        y_predict = algo.predict(X_test)
+
+        # calculate accuracy
+        accuracy = np.mean(y_predict == y_test)
+        accuracies.append(accuracy)
+
+    # Step 3: pick the best accuracy
+    cv_accuracy = np.mean(accuracies)
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
