@@ -1,5 +1,6 @@
 import numpy as np
-
+from matplotlib import pyplot as plt
+from matplotlib.colors import ListedColormap
 
 class LogisticRegressionGD(object):
     """
@@ -66,8 +67,6 @@ class LogisticRegressionGD(object):
 
             if i > 0 and (self.Js[i - 1] - self.Js[i]) < self.eps:
                 break
-
-           # self.theta = self.theta - (self.eta / m) * np.dot(X.T, hypothesis)
 
             self.theta = self.theta - ( self.eta * (np.dot(X.T, hypothesis - y) / m ))
             self.thetas.append(self.theta)
@@ -250,7 +249,8 @@ class EM(object):
         self.weights = []
         self.mus = []
         self.sigmas = []
-        self.costs = None
+        self.costs = []
+        self.J_history = []
 
     # initial guesses for parameters
     def init_params(self, data):
@@ -259,25 +259,17 @@ class EM(object):
         """
         ###########################################################################
         ###########################################################################
-        # # self.responsibilities = np.zeros((data.shape[0], self.k))
-        # self.weights = np.ones(self.k) / self.k
-        #
-        # # random initialization strategy: divide the data into k partitions
-        # # calculate the mus and the sigmas based on each partition
-        #
-        # data_split = np.array_split(data, self.k)
-        #
-        # self.mus = np.array([np.mean(partition) for partition in data_split])
-        # self.sigmas = np.array([np.std(partition) for partition in data_split])
+        self.weights = np.ones(self.k) / self.k
 
-        temp_data = np.split(data, self.k)
+        # random initialization strategy: divide the data into k partitions
+        data_split = np.array_split(data, self.k)
 
-        for i in range(self.k):
-            self.weights = np.append(self.weights, 1 / self.k)
-            self.mus = np.append(self.mus, [np.mean(temp_data[i])])
-            self.sigmas = np.append(self.sigmas, [np.std(temp_data[i])])
+        # calculate the mus and the sigmas based on each partition
 
-            ###########################################################################
+        self.mus = np.array([np.mean(partition) for partition in data_split])
+        self.sigmas = np.array([np.std(partition) for partition in data_split])
+
+        ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
 
@@ -287,35 +279,18 @@ class EM(object):
         """
         ###########################################################################
         ###########################################################################
-        # normalized_responses = np.zeros(shape = (len(data), self.k))
-        #
-        # for j in range(self.k):
-        #
-        #     for i in range(len(data)):
-        #         normal_vals = norm_pdf(data[i], self.mus[j], self.sigmas[j])
-        #         normalized_responses[i][j] = self.weights[j] * normal_vals
-        #
-        # for i in range(data.shape[0]):
-        #
-        #     for j in range(self.k):
-        #         normalized_responses[i][j] /= np.sum(normalized_responses[i])
-        #
-        # return normalized_responses
-
-        respons = np.zeros(shape=(len(data), self.k))
-
-        # calculate for each instance the probabilty that it came from gaussian k
+        normalized_responses = [None] * self.k
+        sum = 0
         for j in range(self.k):
-            for i in range(len(data)):
-                respons[i][j] = self.weights[j] * norm_pdf(data[i], self.mus[j], self.sigmas[j])
+            normal_vals = norm_pdf(data, self.mus[j], self.sigmas[j])
+            calc_weights = self.weights[j] * normal_vals
+            sum += calc_weights
 
-        # the responsibilities
-        for i in range(len(data)):
-            sumRes = np.sum(respons[i])
-            for j in range(self.k):
-                respons[i][j] /= sumRes
+            normalized_responses[j] = calc_weights
 
-        return respons
+        normalized_responses /= sum
+
+        return np.array(normalized_responses)
 
         ###########################################################################
         #                             END OF YOUR CODE                            #
@@ -323,52 +298,45 @@ class EM(object):
 
     def maximization(self, data):
         """
-        M step - This function should calculate and update the distribution params
+        M step - This function calculates and updates the model parameters
         """
-        ###########################################################################
-        ###########################################################################
-        # save the shapes of the data
-        rows = self.responsibilities.shape[0]
-        columns = self.responsibilities.shape[1]
+        # Obtain the size of  responsibilities
+        size = data.shape[0]
 
-        # initialize arrays in the right size with zeros
-        mus_new = np.zeros(columns)
-        sigmas_new = np.zeros(columns)
+        # hold the new mean and standard deviation values
+        updated_weights = np.zeros(self.k)
+        updated_mus = np.zeros(self.k)
+        updated_sigmas = np.zeros(self.k)
 
-        # calc the full weights array
-        ws_new = self.responsibilities.sum(axis=0) / rows
+        for i in range(self.k):
+            # 1. calculate the updated weights
+            updated_weights[i] = np.sum(self.responsibilities[i]) / size
 
-        # run on all the ranks array and calculate mu and sigma array
-        for i in range(columns):
-            mus_new[i] = (1 / (ws_new[i] * rows)) * ((data[:] * self.responsibilities[:, i]).sum())
-            sigmas_new[i] = np.sqrt(
-                (1 / (ws_new[i] * rows)) * (self.responsibilities[:, i] * np.square(data[:] - mus_new[i])).sum())
+            # 2. calculate the updated mus
+            updated_mus[i] = np.sum(data * self.responsibilities[i]) / (updated_weights[i] * size)
 
-        return ws_new, mus_new, sigmas_new
+            # 3. calculate the updated sigmas
+            updated_sigmas[i] = np.sqrt(np.sum(self.responsibilities[i] * (data - updated_mus[i]) ** 2) / (
+                    updated_weights[i] * size))
 
-        # num_columns = self.responsibilities.shape[1]
-        # num_rows = self.responsibilities.shape[0]
-        #
-        # weights_new = self.responsibilities.sum(axis=0) / num_rows
-        #
-        # weights_matrix = (1 / (weights_new * num_rows))
-        #
-        # new_mus = weights_matrix * np.dot(self.responsibilities.T, data)
-        #
-        # data_diff = data - new_mus[:, np.newaxis]
-        # data_diff_squared = np.square(data_diff)
-        #
-        # weighted_data_diff = self.responsibilities * data_diff_squared
-        # new_sigmas = np.sqrt(weights_matrix * np.sum(weighted_data_diff, axis=0))
-        #
-        # return weights_new, new_mus, new_sigmas
+        return updated_weights, updated_mus, updated_sigmas
 
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
 
-    def cost_function(self, data, i):
-        return np.sum(-1 * np.log(self.weights[i] * norm_pdf(data, self.mus[i], self.sigmas[i])))
+    def cost_function(self, data):
+        sum_pdfs = np.zeros_like(data)
+
+        for k in range(self.k):
+            sum_pdfs += self.weights[k] * norm_pdf(data, self.mus[k], self.sigmas[k])
+
+        sum_cost = 0
+        for k in range(self.k):
+            sum_cost += (-np.log(np.sum(sum_pdfs)))
+
+        return sum_cost
+
 
     def fit(self, data):
         """
@@ -381,23 +349,26 @@ class EM(object):
         Parameters:
         - data: The input data for training the model.
         """
-        guessin_current_cost = []
-        guessin_prev_cost = np.zeros(self.k)
-        difference = np.infty
-        iterations = 0
+        current_costs = []
 
         self.init_params(data)
 
-        while iterations < self.n_iter and difference > self.eps:
-            self.responsibilities = self.expectation(data)
-            self.weights, self.mus, self.sigmas = self.maximization(data)
-            for i in range(self.k):
-                cost = self.cost_function(data, i)
-                guessin_current_cost.append(cost)
+        # Perform the iterations
 
-            difference = np.max([abs(np.array(cost) - np.array(guessin_prev_cost))])
-            iterations += 1
-            guessin_prev_cost = cost
+        for i in range(self.n_iter):
+            # 1. E-step
+            self.responsibilities = self.expectation(data)
+
+            #2. M-step
+            self.weights, self.mus, self.sigmas = self.maximization(data)
+
+            # Calculate the cost for each cluster
+            current_cost = self.cost_function(data)
+            current_costs.append(current_cost)
+
+            if len(current_costs) > 1 and abs(current_costs[-2] - current_cost) <= self.eps:
+                break
+
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
@@ -423,14 +394,13 @@ def gmm_pdf(data, weights, mus, sigmas):
     pdf = None
     ###########################################################################
     ###########################################################################
-    normal_vals = norm_pdf(data, mus, sigmas)
-    pdf = np.sum(weights * normal_vals)
+    pdf = np.sum(norm_pdf(data, mus, sigmas) * weights)
+
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
     return pdf
 
-# TODO: Fix Class
 class NaiveBayesGaussian(object):
     """
     Naive Bayes Classifier using Gaussian Mixture Model (EM) for calculating the likelihood.
@@ -469,22 +439,17 @@ class NaiveBayesGaussian(object):
             class_data = X[y == class_value]
             self.priors[class_value] = len(class_data) / len(X)
 
-            em_X1 = EM(k=self.k)
-            em_X2 = EM(k=self.k)
+            first_feat = EM(k=self.k)
+            second_feat = EM(k=self.k)
 
-            em_X1.fit(class_data[:, 0])
-            em_X2.fit(class_data[:, 1])
+            first_feat.fit(class_data[:, 0])
+            second_feat.fit(class_data[:, 1])
 
-            self.gmm_params[class_value] = (em_X1, em_X2)
+            self.gmm_params[class_value] = (first_feat, second_feat)
 
     ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
-    def _calculate_likelihood(self, x, em_X1, em_X2):
-        fX1 = np.sum([em_X1.weights[i] * norm_pdf(x[0], em_X1.mus[i], em_X1.sigmas[i]) for i in range(self.k)])
-        fX2 = np.sum([em_X2.weights[i] * norm_pdf(x[1], em_X2.mus[i], em_X2.sigmas[i]) for i in range(self.k)])
-        return fX1 * fX2
-
     def predict(self, X):
         """
         Return the predicted class labels for a given instance.
@@ -492,27 +457,63 @@ class NaiveBayesGaussian(object):
         ----------
         X : {array-like}, shape = [n_examples, n_features]
         """
-        # preds = None
+
         ###########################################################################
         ###########################################################################
         preds = []
 
-        for x in X:
-            posteriors = []
-            for class_value in self.classes:
-                em_X1, em_X2 = self.gmm_params[class_value]
-                likelihood = self._calculate_likelihood(x, em_X1, em_X2)
-                posteriors.append(likelihood * self.priors[class_value])
+        for instance in X:
+            posterior_probs = []
+            for class_label in self.classes:
+                first_feature_gmm, second_feature_gmm = self.gmm_params[class_label]
 
-            preds.append(np.argmax(posteriors))
+                likelihood_first_feature = gmm_pdf(instance[0], first_feature_gmm.weights, first_feature_gmm.mus,
+                                                   first_feature_gmm.sigmas)
+
+                likelihood_second_feature = gmm_pdf(instance[1], second_feature_gmm.weights, second_feature_gmm.mus,
+                                                    second_feature_gmm.sigmas)
+
+                # assuming feature independence
+                total_likelihood = likelihood_first_feature * likelihood_second_feature
+
+                posterior_probs.append(total_likelihood * self.priors[class_label])
+
+            preds.append(np.argmax(posterior_probs))
 
         return np.asarray(preds)
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
-        return preds
 
-#TODO: Fix function
+# Function for ploting the decision boundaries of a model
+def plot_decision_regions(X, y, classifier, resolution=0.01, title=""):
+
+    # setup marker generator and color map
+    markers = ('.', '.')
+    colors = ('blue', 'red')
+    cmap = ListedColormap(colors[:len(np.unique(y))])
+    # plot the decision surface
+    x1_min, x1_max = X[:, 0].min() - 1, X[:, 0].max() + 1
+    x2_min, x2_max = X[:, 1].min() - 1, X[:, 1].max() + 1
+    xx1, xx2 = np.meshgrid(np.arange(x1_min, x1_max, resolution),
+                           np.arange(x2_min, x2_max, resolution))
+    Z = classifier.predict(np.array([xx1.ravel(), xx2.ravel()]).T)
+    Z = np.array(Z)
+    Z = Z.reshape(xx1.shape)
+    plt.contourf(xx1, xx2, Z, alpha=0.3, cmap=cmap)
+    plt.xlim(xx1.min(), xx1.max())
+    plt.ylim(xx2.min(), xx2.max())
+
+    for idx, cl in enumerate(np.unique(y)):
+        plt.title(title)
+        plt.scatter(x=X[y == cl, 0],
+                    y=X[y == cl, 1],
+                    alpha=0.8,
+                    c=colors[idx],
+                    marker=markers[idx],
+                    label=cl,
+                    edgecolor='black')
+    plt.show()
 def model_evaluation(x_train, y_train, x_test, y_test, k, best_eta, best_eps):
     ''' 
     Read the full description of this function in the notebook.
@@ -555,6 +556,13 @@ def model_evaluation(x_train, y_train, x_test, y_test, k, best_eta, best_eps):
     lor_train_acc = np.mean(y_train == y_pred_train_lor)
     lor_test_acc = np.mean(y_test == y_pred_test_lor)
 
+    # Plotting the Logistic Regression
+    plt.figure()
+    plot_decision_regions(x_train, y_train, classifier=logistic_model, title="Logistic Regression Decision Boundaries")
+    print("Explanation of Graph 1: The area of each color in the graph represents "
+          "the region where the Logstic Regression model predicts a class. "
+          "Thus we can observe how well the model separates the different classes in the training set")
+
     # Naive Bayes Gaussian
     nb_gaussian = NaiveBayesGaussian(k=k)
     nb_gaussian.fit(x_train, y_train)
@@ -565,6 +573,28 @@ def model_evaluation(x_train, y_train, x_test, y_test, k, best_eta, best_eps):
     bayes_train_acc = np.mean(y_train == y_pred_train_bayes)
     bayes_test_acc = np.mean(y_test == y_pred_test_bayes)
 
+    # Plotting the Naive Bayes Gaussian
+    plt.figure()
+    plot_decision_regions(x_train, y_train, classifier=nb_gaussian, title="Naive Bayes Gaussian Decision Boundaries")
+    print("Explanation of Graph 2: The area of each color in the graph represents "
+          "the region where the Naive Bayes Gaussian model predicts a class. "
+          "Thus we can observe how well the model separates the different classes in the training set")
+
+    # Plotting cost Vs  iteration for Logistic Regression
+    plt.figure(figsize=(8, 6))
+    plt.plot(range(len(logistic_model.Js)), logistic_model.Js)
+    plt.xlabel('Iterations')
+    plt.ylabel('Cost')
+    plt.title('Cost vs Iterations for Logistic Regression Model')
+    plt.grid(True)
+    plt.show()
+
+    print("Explanation of Graph 3: the graph shows the Logistic Regression learning process."
+          " As the curve is decreasing we see that the model is learning from the data."
+          "As the slope of the curve is smaller, the model near convergence - the error is reduced "
+          "in smaller amounts in each iteration. "
+          )
+
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -573,7 +603,7 @@ def model_evaluation(x_train, y_train, x_test, y_test, k, best_eta, best_eps):
             'bayes_train_acc': bayes_train_acc,
             'bayes_test_acc': bayes_test_acc}
 
-#TODO: Fix function
+
 def generate_datasets():
     from scipy.stats import multivariate_normal
     '''
@@ -590,18 +620,36 @@ def generate_datasets():
     np.random.seed(1)
 
     # Define means and covariance matrices for the classes
-    mu_a = np.array([0, 0])
-    cov_a = np.array([[1, 0], [0, 1]])
+    mu_a = np.array([0, 0, 0])
+    cov_a = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+    samples_a = multivariate_normal(mu_a, cov_a).rvs(200)
+    labels_a = np.zeros(200, dtype=int)
 
-    mu_b = np.array([3, 3])
-    cov_b = np.array([[1, 0], [0, 1]])
+    mu_b = np.array([3, 3, 3])
+    cov_b = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+    samples_b = multivariate_normal(mu_b, cov_b).rvs(200)
+    labels_b = np.ones(200)
 
     # Generate the data for the classes
-    dataset_a_features = np.random.multivariate_normal(mu_a, cov_a, 200)
-    dataset_a_labels = np.zeros(200, dtype=int)
+    dataset_a_features = np.concatenate((samples_a, samples_b))
+    dataset_a_labels = np.concatenate((labels_a,labels_b))
 
-    dataset_b_features = np.random.multivariate_normal(mu_b, cov_b, 200)
-    dataset_b_labels = np.ones(200, dtype=int)
+    mu_a = np.array([1, 1, 1])
+    cov_a = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+    samples_a = multivariate_normal(mu_a, cov_a).rvs(200)
+    labels_a = np.zeros(200, dtype=int)
+
+    mu_b = np.array([4, 4, 4])
+    cov_b = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+    samples_b = multivariate_normal(mu_b, cov_b).rvs(200)
+    labels_b = np.ones(200)
+
+    # Generate the data for the classes
+    dataset_b_features = np.concatenate((samples_a, samples_b))
+    dataset_b_labels = np.concatenate((labels_a, labels_b))
+
+
+
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
