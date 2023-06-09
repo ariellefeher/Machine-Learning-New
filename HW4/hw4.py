@@ -2,6 +2,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.colors import ListedColormap
 
+
 class LogisticRegressionGD(object):
     """
     Logistic Regression Classifier using gradient descent.
@@ -45,17 +46,16 @@ class LogisticRegressionGD(object):
      Helper function to fit that calculates the cost function
     """
     def compute_cost(self, X, y, hypothesis):
-
-        J = (-1 / len(X)) * np.sum((y * np.log(hypothesis)) + ((1 - y) * (np.log(1 - hypothesis))) )
-        return J
+        num_examples = len(X)
+        individual_costs = (y * np.log(hypothesis)) + ((1 - y) * np.log(1 - hypothesis))
+        total_cost = (-1 / num_examples) * np.sum(individual_costs)
+        return total_cost
 
     """
      Helper function to fit that calculates the gradient descent efficiently
      Based on my implementation from HW1
     """
     def gradient_descent(self, X, y):
-       #m = X.shape[0]  # number of instances
-
         m = y.size  # number of labels
 
         for i in range(self.n_iter):
@@ -158,8 +158,6 @@ def cross_validation(X, y, folds, algo, random_state):
 
     ###########################################################################
     ###########################################################################
-
-    # for storing the accuracy calculated per fold
     accuracies = []
 
     # Step 1: splitting the data into folds
@@ -169,7 +167,6 @@ def cross_validation(X, y, folds, algo, random_state):
     # Step 2: Training and Testing the data for each division of the folds
     for i in range(folds):
         # Step 2.1: dividing the data into training and testing based on the folds
-
         train_idx = np.concatenate(fold_indices[:i] + fold_indices[i+1:])
         test_idx = fold_indices[i]
 
@@ -178,7 +175,6 @@ def cross_validation(X, y, folds, algo, random_state):
         X_test, y_test = X[test_idx], y[test_idx]
 
         # Step 2.2: Training the training data and predicting accordingly
-
         algo.fit(X_train, y_train)
         y_predict = algo.predict(X_test)
 
@@ -220,7 +216,7 @@ def norm_pdf(data, mu, sigma):
     ###########################################################################
     return p
 
-# TODO: Fix Class
+
 class EM(object):
     """
     Naive Bayes Classifier using Gaussian Mixture Model (EM) for calculating the likelihood.
@@ -246,13 +242,13 @@ class EM(object):
         np.random.seed(self.random_state)
 
         self.responsibilities = []
-        self.weights = []
+
         self.mus = []
         self.sigmas = []
-        self.costs = []
-        self.J_history = []
+        self.weights = []
 
-    # initial guesses for parameters
+        self.costs = []
+
     def init_params(self, data):
         """
         Initialize distribution params
@@ -265,7 +261,6 @@ class EM(object):
         data_split = np.array_split(data, self.k)
 
         # calculate the mus and the sigmas based on each partition
-
         self.mus = np.array([np.mean(partition) for partition in data_split])
         self.sigmas = np.array([np.std(partition) for partition in data_split])
 
@@ -279,16 +274,18 @@ class EM(object):
         """
         ###########################################################################
         ###########################################################################
-        normalized_responses = [None] * self.k
-        sum = 0
-        for j in range(self.k):
-            normal_vals = norm_pdf(data, self.mus[j], self.sigmas[j])
-            calc_weights = self.weights[j] * normal_vals
-            sum += calc_weights
+        num_gaussians = self.k
+        normalized_responses = [None] * num_gaussians
+        total_weight = 0
 
-            normalized_responses[j] = calc_weights
+        for i in range(num_gaussians):
+            normal_vals = norm_pdf(data, self.mus[i], self.sigmas[i])
+            calc_weights = self.weights[i] * normal_vals
+            total_weight += calc_weights
 
-        normalized_responses /= sum
+            normalized_responses[i] = calc_weights
+
+        normalized_responses /= total_weight
 
         return np.array(normalized_responses)
 
@@ -300,15 +297,15 @@ class EM(object):
         """
         M step - This function calculates and updates the model parameters
         """
-        # Obtain the size of  responsibilities
         size = data.shape[0]
+        num_gaussians = self.k
 
         # hold the new mean and standard deviation values
-        updated_weights = np.zeros(self.k)
-        updated_mus = np.zeros(self.k)
-        updated_sigmas = np.zeros(self.k)
+        updated_weights = np.zeros(num_gaussians)
+        updated_mus = np.zeros(num_gaussians)
+        updated_sigmas = np.zeros(num_gaussians)
 
-        for i in range(self.k):
+        for i in range(num_gaussians):
             # 1. calculate the updated weights
             updated_weights[i] = np.sum(self.responsibilities[i]) / size
 
@@ -337,7 +334,6 @@ class EM(object):
 
         return sum_cost
 
-
     def fit(self, data):
         """
         Fit training data (the learning phase).
@@ -353,13 +349,11 @@ class EM(object):
 
         self.init_params(data)
 
-        # Perform the iterations
-
         for i in range(self.n_iter):
             # 1. E-step
             self.responsibilities = self.expectation(data)
 
-            #2. M-step
+            # 2. M-step
             self.weights, self.mus, self.sigmas = self.maximization(data)
 
             # Calculate the cost for each cluster
@@ -464,6 +458,7 @@ class NaiveBayesGaussian(object):
 
         for instance in X:
             posterior_probs = []
+
             for class_label in self.classes:
                 first_feature_gmm, second_feature_gmm = self.gmm_params[class_label]
 
@@ -485,7 +480,7 @@ class NaiveBayesGaussian(object):
         #                             END OF YOUR CODE                            #
         ###########################################################################
 
-# Function for ploting the decision boundaries of a model
+# Function for ploting the decision boundaries of a model Taken from the notebook
 def plot_decision_regions(X, y, classifier, resolution=0.01, title=""):
 
     # setup marker generator and color map
@@ -514,6 +509,7 @@ def plot_decision_regions(X, y, classifier, resolution=0.01, title=""):
                     label=cl,
                     edgecolor='black')
     plt.show()
+
 def model_evaluation(x_train, y_train, x_test, y_test, k, best_eta, best_eps):
     ''' 
     Read the full description of this function in the notebook.
@@ -559,9 +555,6 @@ def model_evaluation(x_train, y_train, x_test, y_test, k, best_eta, best_eps):
     # Plotting the Logistic Regression
     plt.figure()
     plot_decision_regions(x_train, y_train, classifier=logistic_model, title="Logistic Regression Decision Boundaries")
-    print("Explanation of Graph 1: The area of each color in the graph represents "
-          "the region where the Logstic Regression model predicts a class. "
-          "Thus we can observe how well the model separates the different classes in the training set")
 
     # Naive Bayes Gaussian
     nb_gaussian = NaiveBayesGaussian(k=k)
@@ -576,9 +569,6 @@ def model_evaluation(x_train, y_train, x_test, y_test, k, best_eta, best_eps):
     # Plotting the Naive Bayes Gaussian
     plt.figure()
     plot_decision_regions(x_train, y_train, classifier=nb_gaussian, title="Naive Bayes Gaussian Decision Boundaries")
-    print("Explanation of Graph 2: The area of each color in the graph represents "
-          "the region where the Naive Bayes Gaussian model predicts a class. "
-          "Thus we can observe how well the model separates the different classes in the training set")
 
     # Plotting cost Vs  iteration for Logistic Regression
     plt.figure(figsize=(8, 6))
@@ -588,12 +578,6 @@ def model_evaluation(x_train, y_train, x_test, y_test, k, best_eta, best_eps):
     plt.title('Cost vs Iterations for Logistic Regression Model')
     plt.grid(True)
     plt.show()
-
-    print("Explanation of Graph 3: the graph shows the Logistic Regression learning process."
-          " As the curve is decreasing we see that the model is learning from the data."
-          "As the slope of the curve is smaller, the model near convergence - the error is reduced "
-          "in smaller amounts in each iteration. "
-          )
 
     ###########################################################################
     #                             END OF YOUR CODE                            #
